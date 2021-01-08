@@ -1,0 +1,56 @@
+﻿<Properties StartupConfiguration="{BFEA46C9-DB7E-95D2-7986-D90A09ADD32C}|">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/qjs/Core/QuickJS.cs">
+    <Files>
+      <File FileName="Assets/qjs/configure/Configure.cs" Line="98" Column="10" />
+      <File FileName="Assets/qjs/Behaviours/EditorBaseBehaviour.cs" />
+      <File FileName="Assets/qjs/Behaviours/BaseBehaviour.cs" />
+      <File FileName="Assets/qjs/Editor/BehaviourEditor.cs" />
+      <File FileName="Assets/qjs/Editor/ConfigureEditor.cs" />
+      <File FileName="Assets/qjs/Support/AsarAsset.cs" />
+      <File FileName="Assets/qjs/Editor/AsarImporter.cs" />
+      <File FileName="Assets/qjs/Editor/AsarAssetEditor.cs" />
+      <File FileName="Assets/qjs/Configure/DefaultConfigure.cs" Line="12" Column="42" />
+      <File FileName="Assets/qjs/Core/QuickJS.cs" Line="741" Column="36" />
+      <File FileName="Assets/qjs/Demos/MultiThread/multi_thread.js" Line="16" Column="9" />
+      <File FileName="Assets/qjs/Demos/NpmPack/NpmConfigure.cs" Line="1" Column="1" />
+      <File FileName="Assets/qjs/Demos/HelloWorld/HelloWorld.cs" Line="41" Column="90" />
+      <File FileName="Assets/qjs/Demos/NpmPack/npm_demo.js" Line="1" Column="1" />
+      <File FileName="Assets/qjs/Core/Utils.cs" Line="1" Column="1" />
+      <File FileName="Assets/qjs/Core/Types.cs" Line="1" Column="1" />
+      <File FileName="Assets/qjs/Core/SimpleJSON.cs" Line="1" Column="1" />
+      <File FileName="Assets/qjs/Demos/MultiThread/MtConfigure_Gen.cs" Line="21" Column="46" />
+      <File FileName="Assets/qjs/Demos/MultiThread/MtConfigure.cs" Line="9" Column="5" />
+      <File FileName="Assets/qjs/Demos/Simple/simple.js" Line="17" Column="32" />
+    </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State name="__root__">
+          <Node name="quickjs" expanded="True">
+            <Node name="Assets" expanded="True">
+              <Node name="qjs" expanded="True">
+                <Node name="Behaviours" expanded="True" />
+                <Node name="Configure" expanded="True" />
+                <Node name="Core" expanded="True">
+                  <Node name="QuickJS.cs" selected="True" />
+                </Node>
+                <Node name="Demos" expanded="True">
+                  <Node name="HelloWorld" expanded="True" />
+                  <Node name="MultiThread" expanded="True" />
+                  <Node name="NpmPack" expanded="True" />
+                </Node>
+                <Node name="Editor" expanded="True" />
+              </Node>
+            </Node>
+          </Node>
+        </State>
+      </Pad>
+    </Pads>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.ItemProperties.Assembly-CSharp PreferredExecutionTarget="b1f875c2-4308-451f-ac35-bac99f963c97" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MultiItemStartupConfigurations />
+</Properties>

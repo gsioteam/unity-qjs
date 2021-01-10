@@ -4,3 +4,5 @@ quickjs.sln
 *.csproj
 Packages
 Logs
+obj
+.vs

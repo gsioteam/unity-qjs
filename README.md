@@ -90,5 +90,5 @@ this.transform.position = vec3(1,0);
 
 - Performance
 
-About 2x faster than xLua on Mac OSX. Tested call C# from JS and JS caculate.
+About 2x faster than xLua on Mac OSX. Tested call JS from C# and JS caculate.
 

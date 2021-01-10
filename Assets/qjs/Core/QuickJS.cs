@@ -101,7 +101,7 @@ namespace qjs
         [DllImport(dll_name)]
         public static extern void QJS_ReleaseJSValue(IntPtr ctx, IntPtr ptr);
 
-        [DllImport(dll_name)]
+        [DllImport(dll_name, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr QJS_Setup(QJS_Handles handlers, IntPtr argumentsPtr, IntPtr resultsPtr);
 
         [DllImport(dll_name)]
@@ -405,12 +405,12 @@ namespace qjs
                 if (type == ITEM_TYPE_JS_STRING)
                 {
                     IntPtr ptr = QJS_ToStringPtr(quickJS.ctx, val.p);
-                    string ret = Marshal.PtrToStringAuto(ptr);
+                    string ret = Marshal.PtrToStringAnsi(ptr);
                     QJS_FreeStringPtr(quickJS.ctx, ptr);
                     return ret;
                 } else if (type == ITEM_TYPE_STRING)
                 {
-                    return Marshal.PtrToStringAuto(val.p);
+                    return Marshal.PtrToStringAnsi(val.p);
                 } else
                 {
                     return null;
@@ -430,7 +430,7 @@ namespace qjs
                     case Api.ITEM_TYPE_BOOL:
                         return val.b ? JSValue.True : JSValue.False;
                     case Api.ITEM_TYPE_STRING:
-                        return new JSValue(Marshal.PtrToStringAuto(val.p));
+                        return new JSValue(Marshal.PtrToStringAnsi(val.p));
                     case Api.ITEM_TYPE_JS_OBJECT:
                         {
                             Instance instance;
@@ -1233,6 +1233,7 @@ namespace qjs
                                             }
                                             int count = instance.annotations.Count;
                                             instance.annotations.Add(annotation);
+                                            Debug.Log("add field " + count);
                                             results[0].SetItem(count);
                                             return;
                                         }
@@ -2119,7 +2120,7 @@ namespace qjs
             } else if (type == JSValueType.String)
             {
                 if (stringPtr != IntPtr.Zero)
-                    Marshal.FreeBSTR(stringPtr);
+                    Marshal.FreeHGlobal(stringPtr);
             }
         }
 
@@ -2153,7 +2154,7 @@ namespace qjs
             {
                 if (stringPtr != IntPtr.Zero)
                 {
-                    Marshal.FreeBSTR(stringPtr);
+                    Marshal.FreeHGlobal(stringPtr);
                     stringPtr = IntPtr.Zero;
                 }
             }

@@ -1,2 +1,6 @@
 Library
 Temp
+quickjs.sln
+*.csproj
+Packages
+Logs

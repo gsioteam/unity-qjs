@@ -63,7 +63,7 @@ Just use `Worker` for multi-thread, like in browser.
 
 - Base math type.
 
-I have write some pure js type for math caculate, use the js type will faster.
+I have write some pure js type for math caculate, use the js type would be faster.
 
 |JS Type    |C# Type    |
 |  ----     | ----      |
@@ -75,12 +75,19 @@ I have write some pure js type for math caculate, use the js type will faster.
 
 - Customer type convert
 
-Your can implment a `toUnity` function for support convert to C# object.
+Your can implment a `toUnity` function for support convert to C# object. 
 
 ```js
 const Vector3 = unity('UnityEngine.Vector3');
 vec3.prototype.toUnity = ()=>new Vector3(...this.m);
 ```
+
+Then, you can pass `vec3` to C#.
+
+```js
+this.transform.position = vec3(1,0);
+```
+
 - Performance
 
 About 2x faster than xLua on Mac OSX. Tested call C# from JS and JS caculate.

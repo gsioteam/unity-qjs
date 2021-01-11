@@ -35,6 +35,8 @@ console.log(md5('hello'));
 
 - Support `require` and `import` both
 
+Also, `module.exports = A` is same as `export default A`.
+
 - `await` coroutine
 
 ```js

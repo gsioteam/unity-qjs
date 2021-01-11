@@ -13,9 +13,7 @@ class A extends MonoBehaviour {
     }
 
     Update() {
-        var vec = this.transform.position;
-        vec += vec3(0.01, 0, 0);
-        this.transform.position = vec;
+        this.transform.position += vec3(0.01, 0, 0);
     }
 };
 

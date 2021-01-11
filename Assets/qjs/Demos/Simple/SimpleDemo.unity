@@ -311,7 +311,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   script: {fileID: 4900000, guid: 8cd7046101e954f509364dfe3d0f0836, type: 3}
-  m_Fields: '{"type":16,"value":[{"key":"test4","value":{"type":13,"value":[1,2,0]}}]}'
+  m_Fields: '{"type":16,"value":[{"key":"test4","value":{"type":13,"value":[0,2,0]}}]}'
 --- !u!1 &1847117484
 GameObject:
   m_ObjectHideFlags: 0

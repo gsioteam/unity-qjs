@@ -2450,7 +2450,7 @@ namespace qjs
 
         /**
          * Create a object by this constructor.
-         * If this is not a constructor JSValue.Zero would by returned.
+         * If this is not a constructor JSValue.Zero would be returned.
          */
         public JSValue New(params object[] argv)
         {

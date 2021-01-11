@@ -611,7 +611,9 @@ namespace qjs
 
     public interface RequireLoader
     {
+        // Load content of filename
         string Load(string filename);
+        // Test if file exist
         bool Test(string filename);
     }
 
@@ -1233,7 +1235,6 @@ namespace qjs
                                             }
                                             int count = instance.annotations.Count;
                                             instance.annotations.Add(annotation);
-                                            Debug.Log("add field " + count);
                                             results[0].SetItem(count);
                                             return;
                                         }
@@ -1457,6 +1458,7 @@ namespace qjs
             }
         }
 
+        private Dictionary<string, JSONNode> packageCache = new Dictionary<string, JSONNode>();
         private string testFile(string filename)
         {
             if (Loader == null) return null;
@@ -1478,8 +1480,13 @@ namespace qjs
             string packstr = filename + "/package.json";
             if (Loader.Test(packstr))
             {
-                string content = Loader.Load(packstr);
-                JSONNode json = JSON.Parse(content);
+                JSONNode json;
+                if (!packageCache.TryGetValue(packstr, out json))
+                {
+                    string content = Loader.Load(packstr);
+                    json = JSON.Parse(content);
+                    packageCache.Add(packstr, json);
+                }
                 if (json.IsObject)
                 {
                     if (json.HasKey("main"))

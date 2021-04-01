@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/qjs/Demos/Simple/SimpleDemo.unity
-    guid: 224f8efed34bc494987231680a16a79f
+    path: Assets/qjs/Demos/MultiThread/MultiThreadDemo.unity
+    guid: 58ec9007c1fcd4d76bae419311536155
   m_configObjects: {}

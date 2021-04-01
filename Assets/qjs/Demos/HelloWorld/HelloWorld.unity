@@ -309,4 +309,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ce24513473c84fb08a719b54ccc3892, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  test: {fileID: 0}
+  container:
+    target: {fileID: 2030695155}
+    script: {fileID: 4900000, guid: 8cd7046101e954f509364dfe3d0f0836, type: 3}
+    attributes:
+    - key: test4
+      value:
+        id: 0
+  references:
+    version: 1
+    00000000:
+      type: {class: Vector3, ns: UnityEngine, asm: UnityEngine.CoreModule}
+      data:
+        x: 1
+        y: 2
+        z: 4

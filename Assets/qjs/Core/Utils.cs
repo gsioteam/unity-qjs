@@ -539,6 +539,7 @@ namespace qjs
 
         public static object ConvertType(object obj, Type type)
         {
+            if (obj == null) return null;
             if (type.IsAssignableFrom(obj.GetType()))
             {
                 return obj;

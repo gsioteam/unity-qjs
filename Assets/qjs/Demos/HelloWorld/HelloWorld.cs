@@ -30,6 +30,10 @@ public class HelloWorld : MonoBehaviour
 
     delegate void TestAction(int i);
 
+    private void OnEnable()
+    {
+    }
+
     void Start()
     {
         qjs.QuickJS quickJS = new qjs.QuickJS();

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace qjs
 {
-    class FilesIndex : RequireLoader, QuickBehaviour.ResourceIndex
+    class FilesIndex : RequireLoader, Configure.ResourceIndex
     {
         Dictionary<string, string> files;
         Dictionary<TextAsset, string> index;
@@ -86,6 +86,15 @@ namespace qjs
     [ExecuteInEditMode]
     public abstract class Configure : MonoBehaviour
     {
+
+        public interface ResourceIndex
+        {
+            string FindIndex(TextAsset text);
+        }
+
+        private static ResourceIndex index;
+        public static ResourceIndex Index { get => index; }
+
         [SerializeField]
         private List<FileKeyValue> files;
 
@@ -104,7 +113,7 @@ namespace qjs
             OnRegisterClass((type, _) => QuickJS.Instance.RegisterClass(type));
             FilesIndex filesIndex = new FilesIndex(files, asars);
             QuickJS.Instance.Loader = filesIndex;
-            QuickBehaviour.Index = filesIndex;
+            index = filesIndex;
         }
 
         public abstract void OnRegisterClass(Action<Type, HashSet<string>> RegisterClass);

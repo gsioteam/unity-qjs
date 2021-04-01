@@ -155,7 +155,7 @@ namespace qjs
         Vector2 scrollPosition2 = Vector2.zero;
         SerializedProperty filesProperty, asarsProperty;
 
-        [MenuItem("GameObject/Create QJS Configure")]
+        [MenuItem("GameObject/Create QJS Configure", false, 11)]
         static void CreateConfigure()
         { 
             string path = EditorUtility.SaveFilePanelInProject("New a configure", "MyConfigure", "cs", "");

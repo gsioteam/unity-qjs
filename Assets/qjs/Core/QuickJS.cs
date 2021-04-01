@@ -1211,42 +1211,39 @@ namespace qjs
                                 }
                                 return;
                             }
-                        case Api.TYPE_ADD_DFIELD:
-                            {
-                                if (argc >= 3)
-                                {
-                                    Instance instance;
-                                    if (argv[0].type == Api.ITEM_TYPE_JS_OBJECT && instances.items.TryGetValue(argv[0].val.i, out instance))
-                                    {
-                                        if (instance.annotations == null)
-                                        {
-                                            instance.annotations = new List<Annotation>();
-                                        }
-                                        try
-                                        {
-                                            Annotation annotation = new Annotation();
-                                            annotation.name = argv[1].ToString(quickJS);
-                                            int t = argv[2].val.i;
-                                            annotation.type = (FieldType)t;
-                                            if (argc > 3)
-                                            {
-                                                var val = Utils.ProcessObject(quickJS, ref argv[3]);
-                                                annotation.defaultValue = (val is JSValue) ? ((JSValue)val).Value : val;
-                                            }
-                                            int count = instance.annotations.Count;
-                                            instance.annotations.Add(annotation);
-                                            results[0].SetItem(count);
-                                            return;
-                                        }
-                                        catch (Exception e)
-                                        {
-                                            Debug.LogError("add field failed " + e);
-                                        }
-                                    }
-                                }
-                                results[0].SetNull();
-                                return;
-                            }
+                        //case Api.TYPE_ADD_DFIELD:
+                        //    {
+                        //        if (argc >= 2)
+                        //        {
+                        //            Class clazz = instances.classes[class_id];
+                        //            if (clazz.annotations == null)
+                        //            {
+                        //                clazz.annotations = new List<Annotation>();
+                        //            }
+                        //            try
+                        //            {
+                        //                Annotation annotation = new Annotation();
+                        //                annotation.name = argv[0].ToString(quickJS);
+                        //                int t = argv[1].val.i;
+                        //                annotation.type = (FieldType)t;
+                        //                if (argc > 2)
+                        //                {
+                        //                    var val = Utils.ProcessObject(quickJS, ref argv[2]);
+                        //                    annotation.defaultValue = (val is JSValue) ? ((JSValue)val).Value : val;
+                        //                }
+                        //                int count = clazz.annotations.Count;
+                        //                clazz.annotations.Add(annotation);
+                        //                results[0].SetItem(count);
+                        //                return;
+                        //            }
+                        //            catch (Exception e)
+                        //            {
+                        //                Debug.LogError("add field failed " + e);
+                        //            }
+                        //        }
+                        //        results[0].SetNull();
+                        //        return;
+                        //    }
                         case Api.TYPE_GET_DFIELD:
                             {
                                 if (argc >= 2)
@@ -1254,17 +1251,23 @@ namespace qjs
                                     Instance instance;
                                     if (argv[0].type == Api.ITEM_TYPE_JS_OBJECT && instances.items.TryGetValue(argv[0].val.i, out instance))
                                     {
-                                        if (instance.target is QuickBehaviour)
+                                        if (instance.container != null)
                                         {
-                                            var behaviour = instance.target as QuickBehaviour;
-                                            if (argv[1].type == Api.ITEM_TYPE_INT)
+                                            string str = argv[1].ToString(quickJS);
+                                            if (str != null)
                                             {
-                                                FieldObject obj = behaviour.FieldData[argv[1].val.i];
-                                                results[0].SetAny(quickJS, obj.Value, instances.resultCache);
-                                                return;
+                                                var attrs = instance.container.GetAttributes();
+                                                foreach (var attr in attrs)
+                                                {
+                                                    if (attr.key == str)
+                                                    {
+                                                        results[0].SetAny(quickJS, attr.value, instances.resultCache);
+                                                        return;
+                                                    }
+                                                }
                                             }
                                         }
-                                    }
+                                    } 
                                 }
                                 results[0].SetNull();
                                 return;
@@ -1276,14 +1279,21 @@ namespace qjs
                                     Instance instance;
                                     if (argv[0].type == Api.ITEM_TYPE_JS_OBJECT && instances.items.TryGetValue(argv[0].val.i, out instance))
                                     {
-                                        if (instance.target is QuickBehaviour)
+                                        if (instance.container != null)
                                         {
-                                            var behaviour = instance.target as QuickBehaviour;
-                                            if (argv[1].type == Api.ITEM_TYPE_INT)
+                                            string str = argv[1].ToString(quickJS);
+                                            if (str != null)
                                             {
-                                                FieldObject obj = behaviour.FieldData[argv[1].val.i];
-                                                var val = Utils.ProcessObject(quickJS, ref argv[2]);
-                                                obj.Value = (val is JSValue) ? ((JSValue)val).Value : val;
+                                                var attrs = instance.container.GetAttributes();
+                                                foreach (var attr in attrs)
+                                                {
+                                                    if (attr.key == str)
+                                                    {
+                                                        var val = Utils.ProcessObject(quickJS, ref argv[2]);
+                                                        attr.value = (val is JSValue) ? ((JSValue)val).Value : val;
+                                                        break;
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -1798,7 +1808,15 @@ namespace qjs
             {
                 instances.arguments[0].SetItem(value, instances.argumentCache);
                 Instance ins = new Instance();
-                ins.target = target;
+                if (target is Container)
+                {
+                    Container container = target as Container;
+                    ins.target = container.target;
+                    ins.container = container;
+                } else
+                {
+                    ins.target = target;
+                }
                 int insId = ++instances.instanceCount;
                 ins.id = insId;
                 instances.items[insId] = instances.index[target] = ins;
@@ -1952,7 +1970,6 @@ namespace qjs
             public QuickJS quickJS;
             public Instance instance;
             public Class clazz;
-            public MonoBehaviour behaviour;
 
             public IntPtr ctx
             {
@@ -1988,7 +2005,7 @@ namespace qjs
                 switch (type)
                 {
                     case JSValueType.Object:
-                        return context.instance.target;
+                        return context.instance == null ? null : context.instance.target;
                     case JSValueType.JSObject:
                         return this;
                     case JSValueType.Class:
@@ -2002,21 +2019,6 @@ namespace qjs
         public static readonly JSValue Zero = new JSValue();
         public static readonly JSValue True = new JSValue(true);
         public static readonly JSValue False = new JSValue(false);
-
-        private bool hasBehaviour = false;
-
-        public MonoBehaviour behaviour
-        {
-            get
-            {
-                return context.behaviour;
-            }
-            set
-            {
-                context.behaviour = value;
-                hasBehaviour = value != null;
-            }
-        }
 
         internal Instance GetObject()
         {
@@ -2131,16 +2133,6 @@ namespace qjs
             }
         }
 
-        internal Annotation[] GetAnnotations()
-        {
-            if (type == JSValueType.Object)
-            {
-                var ret = GetObject().annotations;
-                return ret == null ? null : ret.ToArray();
-            }
-            return null;
-        }
-
         private void free()
         {
             if (context.Disabled) return;
@@ -2167,6 +2159,11 @@ namespace qjs
             }
         }
 
+        private bool isBehaviour()
+        {
+            return context.instance != null && context.instance.target is MonoBehaviour;
+        }
+
         public JSValue Call(string name, params object[] argv)
         {
             if (Type < JSValueType.ObjectIndex)
@@ -2186,8 +2183,8 @@ namespace qjs
                 {
                     instances.arguments[2 + i].SetAny(context.quickJS, argv[i], instances.argumentCache);
                 }
-                if (hasBehaviour)
-                    instances.currentBehaviour = context.behaviour;
+                if (isBehaviour())
+                    instances.currentBehaviour = context.instance.target as MonoBehaviour;
                 int len = Api.QJS_Action(context.ctx, Api.SHARP_CALL, argv.Length + 2);
                 QuickJS.clearCache(instances.argumentCache);
 
@@ -2223,8 +2220,8 @@ namespace qjs
                     instances.arguments[2 + i].SetAny(context.quickJS, argv[i], instances.argumentCache);
                 }
 
-                if (hasBehaviour)
-                    instances.currentBehaviour = context.behaviour;
+                if (isBehaviour())
+                    instances.currentBehaviour = context.instance.target as MonoBehaviour;
                 int len = Api.QJS_Action(context.ctx, Api.SHARP_CALL_ATOM, argv.Length + 2);
                 QuickJS.clearCache(instances.argumentCache);
 
@@ -2250,8 +2247,8 @@ namespace qjs
                 instances.arguments[0].SetValue((IntPtr)value);
                 instances.arguments[1].SetItem(name, instances.argumentCache);
 
-                if (hasBehaviour)
-                    instances.currentBehaviour = context.behaviour;
+                if (isBehaviour())
+                    instances.currentBehaviour = context.instance.target as MonoBehaviour;
                 int len = Api.QJS_Action(context.ctx, Api.SHARP_GET, 2);
                 QuickJS.clearCache(instances.argumentCache);
 
@@ -2280,8 +2277,9 @@ namespace qjs
                 if (context.Disabled) return Zero;
                 instances.arguments[0].SetValue((IntPtr)value);
                 instances.arguments[1].SetItem(unchecked((int)atom.Target));
-                if (hasBehaviour)
-                    instances.currentBehaviour = context.behaviour;
+
+                if (isBehaviour())
+                    instances.currentBehaviour = context.instance.target as MonoBehaviour;
                 int len = Api.QJS_Action(context.ctx, Api.SHARP_GET_ATOM, 2);
 
                 var ret = len > 0 ? instances.results[0].ToValue(context.quickJS) : Zero;
@@ -2304,8 +2302,9 @@ namespace qjs
                 if (context.Disabled) return Zero;
                 instances.arguments[0].SetValue((IntPtr)value);
                 instances.arguments[1].SetItem(index);
-                if (hasBehaviour)
-                    instances.currentBehaviour = context.behaviour;
+
+                if (isBehaviour())
+                    instances.currentBehaviour = context.instance.target as MonoBehaviour;
                 int len = Api.QJS_Action(context.ctx, Api.SHARP_GET_INDEX, 2);
 
                 var ret = len > 0 ? instances.results[0].ToValue(context.quickJS) : Zero;
@@ -2329,8 +2328,9 @@ namespace qjs
                 instances.arguments[0].SetValue((IntPtr)this.value);
                 instances.arguments[1].SetItem(name, instances.argumentCache);
                 instances.arguments[2].SetAny(context.quickJS, value, instances.argumentCache);
-                if (hasBehaviour)
-                    instances.currentBehaviour = context.behaviour;
+
+                if (isBehaviour())
+                    instances.currentBehaviour = context.instance.target as MonoBehaviour;
                 Api.QJS_Action(context.ctx, Api.SHARP_SET, 3);
                 QuickJS.clearCache(instances.argumentCache);
             }
@@ -2357,8 +2357,9 @@ namespace qjs
                 instances.arguments[0].SetValue((IntPtr)this.value);
                 instances.arguments[1].SetItem(unchecked((int)atom.Target));
                 instances.arguments[2].SetAny(context.quickJS, value, instances.argumentCache);
-                if (hasBehaviour)
-                    instances.currentBehaviour = context.behaviour;
+
+                if (isBehaviour())
+                    instances.currentBehaviour = context.instance.target as MonoBehaviour;
                 Api.QJS_Action(context.ctx, Api.SHARP_SET_ATOM, 3);
                 QuickJS.clearCache(instances.argumentCache);
             }
@@ -2379,8 +2380,9 @@ namespace qjs
                 instances.arguments[0].SetValue((IntPtr)this.value);
                 instances.arguments[1].SetItem(index);
                 instances.arguments[2].SetAny(context.quickJS, value, instances.argumentCache);
-                if (hasBehaviour)
-                    instances.currentBehaviour = context.behaviour;
+
+                if (isBehaviour())
+                    instances.currentBehaviour = context.instance.target as MonoBehaviour;
                 Api.QJS_Action(context.ctx, Api.SHARP_SET_INDEX, 3);
                 QuickJS.clearCache(instances.argumentCache);
             }
@@ -2413,8 +2415,9 @@ namespace qjs
                 {
                     instances.arguments[2 + i].SetAny(context.quickJS, argv[i], instances.argumentCache);
                 }
-                if (hasBehaviour)
-                    instances.currentBehaviour = context.behaviour;
+
+                if (isBehaviour())
+                    instances.currentBehaviour = context.instance.target as MonoBehaviour;
                 int len = Api.QJS_Action(context.ctx, Api.SHARP_INVOKE, 2 + argv.Length);
                 QuickJS.clearCache(instances.argumentCache);
 
@@ -2432,8 +2435,9 @@ namespace qjs
                 lock (instances)
                 {
                     StringBuilder stringBuilder = new StringBuilder(256);
-                    if (hasBehaviour)
-                        instances.currentBehaviour = context.behaviour;
+
+                    if (isBehaviour())
+                        instances.currentBehaviour = context.instance.target as MonoBehaviour;
                     Api.QJS_ToString(context.ctx, (IntPtr)value, stringBuilder);
                     return stringBuilder.ToString();
                 }
@@ -2464,8 +2468,9 @@ namespace qjs
                     {
                         instances.arguments[1 + i].SetAny(context.quickJS, argv[i], instances.argumentCache);
                     }
-                    if (hasBehaviour)
-                        instances.currentBehaviour = context.behaviour;
+
+                    if (isBehaviour())
+                        instances.currentBehaviour = context.instance.target as MonoBehaviour;
                     int len = Api.QJS_Action(context.ctx, Api.SHARP_NEW, 1 + argv.Length);
                     QuickJS.clearCache(instances.argumentCache);
 

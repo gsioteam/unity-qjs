@@ -272,11 +272,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 1892787108}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c417b72f17654a9ea75efc59038e1bf, type: 3}
+  m_Script: {fileID: 11500000, guid: 0699efb58e5ea41cd954f7cdf717f312, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  script: {fileID: 4900000, guid: 9cba9712444e044159cde99b9e9245a5, type: 3}
-  m_Fields: 
+  jsScript:
+    target: {fileID: 1892787111}
+    script: {fileID: 4900000, guid: 9cba9712444e044159cde99b9e9245a5, type: 3}
+    attributes: []
+  references:
+    version: 1
 --- !u!1 &1941893854
 GameObject:
   m_ObjectHideFlags: 0

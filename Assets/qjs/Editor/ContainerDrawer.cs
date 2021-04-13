@@ -44,7 +44,7 @@ namespace qjs
                 SerializedProperty attr = attributesProperty.GetArrayElementAtIndex(i);
                 float rowHeight = EditorGUI.GetPropertyHeight(attr.FindPropertyRelative("value"));
                 string key = attr.FindPropertyRelative("key").stringValue;
-                Attribute a = EditorHelper.GetTargetObjectOfProperty(attr) as Attribute;
+                //Attribute a = EditorHelper.GetTargetObjectOfProperty(attr) as Attribute;
                 EditorGUI.PropertyField(
                     new Rect(position.x, position.y + offset,
                     position.width, rowHeight),
@@ -59,7 +59,8 @@ namespace qjs
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             var container = EditorHelper.GetTargetObjectOfProperty(property) as Container;
-            container.target = property.serializedObject.targetObject;
+            if (container.target == null)
+                container.target = property.serializedObject.targetObject;
             container.GetAttributes();
             property.serializedObject.UpdateIfRequiredOrScript();
             var attributesProperty = property.FindPropertyRelative("attributes");

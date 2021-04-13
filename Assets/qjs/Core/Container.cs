@@ -21,6 +21,12 @@ namespace qjs
     {
         public UnityEngine.Object target;
 
+        public Container() { }
+        public Container(UnityEngine.Object target)
+        {
+            this.target = target;
+        }
+
         private static Dictionary<TextAsset, JSValue> modules = new Dictionary<TextAsset, JSValue>();
 
         [HideInInspector]

@@ -7,6 +7,11 @@ public class BaseBehaviour : MonoBehaviour
 {
     public Container js;
 
+    public BaseBehaviour()
+    {
+        js = new Container(this);
+    }
+
     protected readonly static JSAtom AwakeAtom = Container.GetAtom("Awake");
     protected void Awake()
     {

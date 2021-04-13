@@ -306,10 +306,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1798111051}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c417b72f17654a9ea75efc59038e1bf, type: 3}
+  m_Script: {fileID: 11500000, guid: 0699efb58e5ea41cd954f7cdf717f312, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  jsScript:
+  js:
     target: {fileID: 1798111054}
     script: {fileID: 4900000, guid: 16066d9fc36914812abaf7f1b46910f8, type: 3}
     attributes: []

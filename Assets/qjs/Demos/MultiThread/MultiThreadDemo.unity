@@ -275,7 +275,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0699efb58e5ea41cd954f7cdf717f312, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  jsScript:
+  js:
     target: {fileID: 1892787111}
     script: {fileID: 4900000, guid: 9cba9712444e044159cde99b9e9245a5, type: 3}
     attributes: []

@@ -62,7 +62,7 @@ namespace qjs
             if (container.target == null)
                 container.target = property.serializedObject.targetObject;
             container.GetAttributes();
-            property.serializedObject.UpdateIfRequiredOrScript();
+
             var attributesProperty = property.FindPropertyRelative("attributes");
             float height = EditorGUIUtility.singleLineHeight;
             for (int i = 0, t = attributesProperty.arraySize; i < t; ++i)

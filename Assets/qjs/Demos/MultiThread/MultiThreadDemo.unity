@@ -279,7 +279,6 @@ MonoBehaviour:
     target: {fileID: 1892787111}
     script: {fileID: 4900000, guid: 9cba9712444e044159cde99b9e9245a5, type: 3}
     attributes: []
-  hello: 63
   references:
     version: 1
 --- !u!1 &1941893854

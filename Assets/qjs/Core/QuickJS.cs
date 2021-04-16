@@ -88,6 +88,7 @@ namespace qjs
         public const int TYPE_STATIC_PGET = 16;
         public const int TYPE_STATIC_PSET = 17;
         public const int TYPE_CREATE_WORKER = 18;
+        public const int TYPE_PROMISE_TRANS = 19;
 
         [DllImport(dll_name)]
         public static extern IntPtr QJS_RetainInstance(IntPtr ctx, IntPtr ptr);
@@ -507,20 +508,20 @@ namespace qjs
                 {
                     type = ITEM_TYPE_NULL;
                 }
-                else if (obj is YieldInstruction)
-                {
-                    var beh = quickJS.instances.currentBehaviour;
-                    if (beh == null)
-                    {
-                        Debug.LogWarning("No current behaviour, can not make Promise");
-                        type = ITEM_TYPE_NULL;
-                    }
-                    else
-                    {
-                        type = ITEM_TYPE_PROMISE;
-                        val.i = QuickJS.newPromise(beh, quickJS, obj as YieldInstruction);
-                    }
-                }
+                //else if (obj is YieldInstruction)
+                //{
+                //    var beh = quickJS.instances.currentBehaviour;
+                //    if (beh == null)
+                //    {
+                //        Debug.LogWarning("No current behaviour, can not make Promise");
+                //        type = ITEM_TYPE_NULL;
+                //    }
+                //    else
+                //    {
+                //        type = ITEM_TYPE_PROMISE;
+                //        val.i = QuickJS.newPromise(beh, quickJS, obj as YieldInstruction);
+                //    }
+                //}
                 else if (Utils.IsIntType(oType))
                 {
                     if (oType == typeof(long) || oType == typeof(ulong))
@@ -958,11 +959,41 @@ namespace qjs
             success();
         }
 
+        private static IEnumerator promiseCallback(IEnumerator enumerator, Action success)
+        {
+            yield return enumerator;
+            success();
+        }
+
         internal static int newPromise(MonoBehaviour behaviour, QuickJS quickJS, YieldInstruction yieldInstruction)
         {
             var instances = quickJS.instances;
             int promiseId = ++instances.promiseCount;
-            behaviour.StartCoroutine(promiseCallback(yieldInstruction, () => {
+            behaviour.StartCoroutine(promiseCallback(yieldInstruction, () =>
+            {
+                if (!quickJS.Disabled)
+                {
+                    lock (instances)
+                    {
+                        var context = quickJS.ctx;
+                        instances.arguments[0].SetItem(promiseId);
+                        instances.arguments[1].SetItem(1);
+
+                        instances.currentBehaviour = behaviour;
+                        Api.QJS_Action(context, Api.SHARP_PROMISE_COMPLETE, 2);
+                    }
+                }
+            }));
+            Api.QJS_NewPromise(quickJS.ctx, promiseId);
+            return promiseId;
+        }
+
+        internal static int newPromise(MonoBehaviour behaviour, QuickJS quickJS, IEnumerator enumerator)
+        {
+            var instances = quickJS.instances;
+            int promiseId = ++instances.promiseCount;
+            behaviour.StartCoroutine(promiseCallback(enumerator, () =>
+            {
                 if (!quickJS.Disabled)
                 {
                     lock (instances)
@@ -1056,22 +1087,22 @@ namespace qjs
                                     {
                                         var obj = Activator.CreateInstance(clazz.target, ps);
 
-                                        if (obj is YieldInstruction)
-                                        {
-                                            var beh = instances.currentBehaviour;
-                                            if (beh == null)
-                                            {
-                                                Debug.LogWarning("No current behaviour, can not make Promise");
-                                                results[0].SetItem(2);
-                                            }
-                                            else
-                                            {
-                                                int promiseId = newPromise(beh, quickJS, obj as YieldInstruction);
-                                                results[0].SetItem(1);
-                                                results[1].SetPromise(promiseId);
-                                            }
-                                        }
-                                        else
+                                        //if (obj is YieldInstruction)
+                                        //{
+                                        //    var beh = instances.currentBehaviour;
+                                        //    if (beh == null)
+                                        //    {
+                                        //        Debug.LogWarning("No current behaviour, can not make Promise");
+                                        //        results[0].SetItem(2);
+                                        //    }
+                                        //    else
+                                        //    {
+                                        //        int promiseId = newPromise(beh, quickJS, obj as YieldInstruction);
+                                        //        results[0].SetItem(1);
+                                        //        results[1].SetPromise(promiseId);
+                                        //    }
+                                        //}
+                                        //else
                                         {
                                             Instance ins = new Instance();
                                             ins.target = obj;
@@ -1429,6 +1460,39 @@ namespace qjs
                                     Debug.LogError("Can not create worker in worker.");
                                 }
                                 results[0].SetNull();
+                                break;
+                            }
+                        case Api.TYPE_PROMISE_TRANS:
+                            {
+                                Instance instance;
+                                if (argv[0].type == Api.ITEM_TYPE_JS_OBJECT && instances.items.TryGetValue(argv[0].val.i, out instance))
+                                {
+                                    var obj = instance.target;
+                                    var beh = instances.currentBehaviour;
+                                    if (beh == null)
+                                    {
+                                        Debug.LogWarning("No current behaviour, can not make Promise");
+                                        results[0].SetNull();
+                                    }
+                                    else
+                                    {
+                                        if (obj is YieldInstruction)
+                                        {
+                                            int promiseId = newPromise(beh, quickJS, obj as YieldInstruction);
+                                            results[0].SetPromise(promiseId);
+                                        } else if (obj is IEnumerator)
+                                        {
+                                            int promiseId = newPromise(beh, quickJS, obj as IEnumerator);
+                                            results[0].SetPromise(promiseId);
+                                        } else
+                                        {
+                                            results[0].SetNull();
+                                        }
+                                    }
+                                } else
+                                {
+                                    results[0].SetNull();
+                                }
                                 break;
                             }
                         default: break;
@@ -1960,6 +2024,35 @@ namespace qjs
                 Api.QJS_FreeAtom(context.ctx, target);
             }
             context = null;
+        }
+    }
+
+    public class AwaitYield : CustomYieldInstruction
+    {
+        private bool waiting = true;
+        private bool success;
+        private JSValue result;
+
+        public override bool keepWaiting => waiting;
+
+        public bool Success
+        {
+            get => success;
+        }
+        public JSValue Result
+        {
+            get => success ? result : null;
+        }
+        public JSValue Error
+        {
+            get => success ? null : result;
+        }
+
+        internal void Complete(bool success, JSValue result)
+        {
+            this.success = success;
+            this.result = result;
+            waiting = false;
         }
     }
 
@@ -2829,6 +2922,20 @@ namespace qjs
                 default:
                     return TypeCode.DBNull;
             }
+        }
+
+        public AwaitYield Await()
+        {
+            AwaitYield await = new AwaitYield();
+            System.Action<JSValue> success = (value) => {
+                await.Complete(true, value);
+            };
+            Call("then", new object[] { success });
+            System.Action<JSValue> reject = (value) => {
+                await.Complete(false, value);
+            };
+            Call("catch", new object[] { reject });
+            return await;
         }
     }
 

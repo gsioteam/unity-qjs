@@ -5,25 +5,31 @@
 	<key>BuildMachineOSBuild</key>
 	<string>20B50</string>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
+	<string>English</string>
 	<key>CFBundleExecutable</key>
 	<string>qjs</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.qlp.quickjs-osx</string>
+	<string>com.qlp.qjs</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>CFBundleLongVersionString</key>
+	<string></string>
 	<key>CFBundleName</key>
-	<string>quickjs_plugin</string>
+	<string>qjs</string>
 	<key>CFBundlePackageType</key>
-	<string>BNDL</string>
+	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>0.1</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
 	<key>CFBundleSupportedPlatforms</key>
 	<array>
 		<string>MacOSX</string>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>0.1</string>
+	<key>CSResourcesFileMapped</key>
+	<true/>
 	<key>DTCompiler</key>
 	<string>com.apple.compilers.llvm.clang.1_0</string>
 	<key>DTPlatformBuild</key>
@@ -41,8 +47,8 @@
 	<key>DTXcodeBuild</key>
 	<string>12B45b</string>
 	<key>LSMinimumSystemVersion</key>
-	<string>10.9</string>
+	<string>11.0</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2020 nioqio. All rights reserved.</string>
+	<string></string>
 </dict>
 </plist>

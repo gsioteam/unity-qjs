@@ -19,10 +19,9 @@ namespace qjs
     [Serializable]
     public class Container
     {
-        public UnityEngine.Object target;
+        public object target;
 
-        public Container() { }
-        public Container(UnityEngine.Object target)
+        public Container(object target)
         {
             this.target = target;
         }

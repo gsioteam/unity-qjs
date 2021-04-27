@@ -22,6 +22,7 @@
 #include "quickjs_in.h"
 #include <memory.h>
 #include <sys/time.h>
+#include <cstring>
 
 #define TYPE_NEW_OBJECT     0
 #define TYPE_INVOKE         1
@@ -906,7 +907,7 @@ struct QJS_Class {
             members.constructors.push_back(*it);
         }
         
-        JSValue thisData = JS_NewBigInt64(context, (long)this);
+        JSValue thisData = JS_NewBigInt64(context, (long long)this);
         for (auto it = info->fields.begin(), _e = info->fields.end(); it != _e; ++it) {
             int16_t size = (int16_t)members.fields.size();
             members.fields.push_back(it->second);

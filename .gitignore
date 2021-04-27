@@ -6,3 +6,4 @@ Packages
 Logs
 obj
 .vs
+qjs_cmake/build/

@@ -7,3 +7,4 @@ Logs
 obj
 .vs
 qjs_cmake/build/
+.vsconfig

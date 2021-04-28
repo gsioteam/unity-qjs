@@ -33,6 +33,7 @@
 #define TYPE_STATIC_INVOKE  6
 #define TYPE_STATIC_GET     7
 #define TYPE_STATIC_SET     8
+// dep
 #define TYPE_ADD_DFIELD     9
 #define TYPE_GET_DFIELD     10
 #define TYPE_SET_DFIELD     11
@@ -43,7 +44,6 @@
 #define TYPE_STATIC_PGET    16
 #define TYPE_STATIC_PSET    17
 #define TYPE_CREATE_WORKER  18
-#define TYPE_PROMISE_TRANS  19
 
 using namespace std;
 namespace qjs {
@@ -264,6 +264,9 @@ struct QJS_Context {
     JSValue init_object;
     JSValue create_operators;
     JSAtom operator_set_atom;
+    JSAtom push_atom;
+    JSAtom slice_atom;
+    JSAtom fields_atom;
     
     JSValue export_temp;
     
@@ -305,6 +308,21 @@ struct QJS_Context {
         temp_values.push_back(value);
     }
 };
+
+void QJS_LogValue(QJS_Context *ctx, JSValue value) {
+    
+    if (JS_IsException(value)) {
+        JSValue ex = JS_GetException(ctx->context);
+        QJS_PrintError(ctx, ex, "[LError]");
+        JS_FreeValue(ctx->context, ex);
+    } else if (JS_IsArray(ctx->context, value)) {
+        QJS_Log(ctx->runtime, "[O] this is array.");
+    } else {
+        const char *str = JS_ToCString(ctx->context, value);
+        QJS_Log(ctx->runtime, "[O]%s", str);
+        JS_FreeCString(ctx->context, str);
+    }
+}
 
 struct QJS_Constructor {
     int sharp_id;
@@ -734,7 +752,7 @@ struct QJS_Class {
     }
     
     static JSValue set_dfield(JSContext *context, JSValueConst this_val,
-                                        int argc, JSValueConst *argv, int magic) {
+                              int argc, JSValueConst *argv, int magic, JSValue *func_data) {
         QJS_Context *ctx = (QJS_Context *)JS_GetContextOpaque(context);
         JSValue data = JS_GetProperty(context, this_val, ctx->private_key);
         if (JS_IsBigInt(context, data)) {
@@ -743,7 +761,7 @@ struct QJS_Class {
                 JS_FreeValue(context, data);
                 QJS_Instance *ins = (QJS_Instance *)ptr;
                 ctx->arguments[0].setInstance(ins);
-                ctx->arguments[1].set(magic);
+                ctx->arguments[1].set(ctx, func_data[0]);
                 ctx->arguments[2].set(ctx, argv[0]);
                 ctx->runtime->action(ctx,
                                      ins->clazz->sharp_id,
@@ -760,7 +778,7 @@ struct QJS_Class {
     
     
     static JSValue get_dfield(JSContext *context, JSValueConst this_val,
-                                        int argc, JSValueConst *argv, int magic) {
+                              int argc, JSValueConst *argv, int magic, JSValue *func_data) {
         QJS_Context *ctx = (QJS_Context *)JS_GetContextOpaque(context);
         JSValue data = JS_GetProperty(context, this_val, ctx->private_key);
         if (JS_IsBigInt(context, data)) {
@@ -769,7 +787,7 @@ struct QJS_Class {
                 JS_FreeValue(context, data);
                 QJS_Instance *ins = (QJS_Instance *)ptr;
                 ctx->arguments[0].setInstance(ins);
-                ctx->arguments[1].set(magic);
+                ctx->arguments[1].set(ctx, func_data[0]);
                 ctx->runtime->action(ctx,
                                      ins->clazz->sharp_id,
                                      ctx->ids.data(), 0,
@@ -785,53 +803,65 @@ struct QJS_Class {
     static JSValue addField(JSContext *context, JSValueConst this_val,
                             int argc, JSValueConst *argv) {
         QJS_Context *ctx = (QJS_Context *)JS_GetContextOpaque(context);
-        JSValue data = JS_GetProperty(context, this_val, ctx->private_key);
-        if (JS_IsBigInt(context, data)) {
-            int64_t ptr;
-            if (JS_ToBigInt64(context, &ptr, data) == 0) {
-                QJS_Instance *ins = (QJS_Instance *)ptr;
-                if (argc >= 2 && JS_IsString(argv[0])) {
-                    JS_FreeValue(context, data);
-                    ctx->arguments[0].setInstance(ins);
-                    int len = min(argc, 3);
-                    for (int i = 0; i < len; ++i) {
-                        ctx->arguments[1 + i].set(ctx, argv[i]);
+        if (!JS_IsConstructor(context, this_val)) return JS_UNDEFINED;
+        
+        if (argc >= 2 && JS_IsString(argv[0])) {
+            JSPropertyEnum *ptab;
+            uint32_t len;
+            bool fieldsExist = false;
+            if (JS_GetOwnPropertyNames(context, &ptab, &len, this_val, JS_GPN_STRING_MASK) == 0) {
+                for (int i = 0; i < len; ++i) {
+                    JSPropertyEnum &en = ptab[i];
+                    if (ctx->fields_atom == en.atom) {
+                        fieldsExist = true;
+                        break;
                     }
-                    ctx->runtime->action(ctx,
-                                         ins->clazz->sharp_id,
-                                         ctx->ids.data(), 0,
-                                         TYPE_ADD_DFIELD,
-                                         len + 1);
-                    auto &res = ctx->results[0];
-                    if (res.type == ITEM_TYPE_INT) {
-                        JSAtom atom = JS_ValueToAtom(context, argv[0]);
-                        JS_DefinePropertyGetSet(context,
-                                                this_val,
-                                                atom,
-                                                JS_NewCFunctionMagic(context,
-                                                                     get_dfield,
-                                                                     "get",
-                                                                     0,
-                                                                     JS_CFUNC_getter_magic,
-                                                                     res.i),
-                                                JS_NewCFunctionMagic(context,
-                                                                     set_dfield,
-                                                                     "set",
-                                                                     1,
-                                                                     JS_CFUNC_setter_magic,
-                                                                     res.i),
-                                                0);
-                        JS_FreeAtom(context, atom);
-                    }
-                    return JS_UNDEFINED;
-                } else {
-                    QJS_Error(ctx->runtime, "Add field failed.");
                 }
+                
+                js_free(context, ptab);
             }
-        } else {
+            JSValue array;
+            if (!fieldsExist) {
+                JSValue arr = JS_GetProperty(context, this_val, ctx->fields_atom);
+                array = JS_Invoke(context, arr, ctx->slice_atom, 0, nullptr);
+                JS_SetProperty(context, this_val, ctx->fields_atom, JS_DupValue(context, array));
+                JS_FreeValue(context, arr);
+            } else {
+                array = JS_GetProperty(context, this_val, ctx->fields_atom);
+            }
             
+            JSValue data = JS_NewArray(context);
+            len = min(argc, 3);
+            for (int i = 0; i < len; ++i) {
+                JS_Invoke(context, data, ctx->push_atom, 1, &argv[i]);
+            }
+            JS_Invoke(context, array, ctx->push_atom, 1, &data);
+            JS_FreeValue(context, data);
+            
+            JSValue prototype = JS_GetPropertyStr(context, this_val, "prototype");
+            JSAtom atom = JS_ValueToAtom(context, argv[0]);
+            
+            JS_DefinePropertyGetSet(context,
+                                    prototype,
+                                    atom,
+                                    JS_NewCFunctionData(context,
+                                                        get_dfield,
+                                                        0,
+                                                        0,
+                                                        1,
+                                                        &argv[0]),
+                                    JS_NewCFunctionData(context,
+                                                        set_dfield,
+                                                        0,
+                                                        0,
+                                                        1,
+                                                        &argv[0]),
+                                    0);
+            JS_FreeAtom(context, atom);
+            JS_FreeValue(context, prototype);
+            
+            JS_FreeValue(context, array);
         }
-        JS_FreeValue(context, data);
         return JS_UNDEFINED;
     }
     
@@ -907,7 +937,7 @@ struct QJS_Class {
             members.constructors.push_back(*it);
         }
         
-        JSValue thisData = JS_NewBigInt64(context, (long long)this);
+        JSValue thisData = JS_NewBigInt64(context, (long)this);
         for (auto it = info->fields.begin(), _e = info->fields.end(); it != _e; ++it) {
             int16_t size = (int16_t)members.fields.size();
             members.fields.push_back(it->second);
@@ -1016,8 +1046,9 @@ struct QJS_Class {
         
 //        JS_SetProperty(context, proto, ctx->toString_key, JS_NewCFunction(context, toString, "toString", 0));
 
+        JS_SetProperty(context, func, ctx->fields_atom, JS_NewArray(context));
         JS_SetPropertyStr(context, proto, "toString",JS_NewCFunction(context, toString, "toString", 0));
-        JS_SetPropertyStr(context, proto, "addField", JS_NewCFunction(context, addField, "addField", 3));
+        JS_SetPropertyStr(context, func, "field", JS_NewCFunction(context, addField, "field", 4));
         if (has_operator) {
             JSValue operators = JS_Call(context,
                                         ctx->create_operators,
@@ -1490,26 +1521,6 @@ void JS_Log(const char *format, ...) {
     }
 }
 
-JSValue QJS_PromiseTransformer(JSContext *context, JSValue value) {
-    JSValue res = JS_UNDEFINED;
-    QJS_Context *ctx = (QJS_Context *)JS_GetContextOpaque(context);
-    if (JS_HasProperty(context, value, ctx->private_key)) {
-        JSValue data = JS_GetProperty(context, value, ctx->private_key);
-        int64_t ptr;
-        if (JS_ToBigInt64(context, &ptr, data) == 0) {
-            QJS_Instance *ins = (QJS_Instance *)ptr;
-            ctx->arguments[0].setInstance(ins);
-            ctx->runtime->action(ctx,
-                                 ins->clazz->sharp_id,
-                                 ctx->ids.data(),
-                                 0, TYPE_PROMISE_TRANS, 1);
-            res = ctx->results[0].toValue(ctx);
-        }
-        JS_FreeValue(context, data);
-    }
-    return res;
-}
-
 void *QJS_Setup(QJS_Handlers handlers, QJS_Item *arguments, QJS_Item *results) {
     QJS_Runtime *rt = new QJS_Runtime;
     rt->runtime = JS_NewRuntime();
@@ -1518,7 +1529,6 @@ void *QJS_Setup(QJS_Handlers handlers, QJS_Item *arguments, QJS_Item *results) {
     JS_SetRuntimeOpaque(rt->runtime, rt);
 //    js_std_init_handlers(rt->runtime);
     JS_SetModuleLoaderFunc(rt->runtime, module_name, module_loader, rt);
-    JS_SetPromiseTransform(QJS_PromiseTransformer);
     
     rt->handlers = handlers;
     _temp_runtime = rt;
@@ -1547,6 +1557,9 @@ QJS_Context *QJS_NewContext(QJS_Runtime *rt) {
     ctx->prototype_key = JS_NewAtom(context, "prototype");
     ctx->toString_key = JS_NewAtom(context, "toString");
     ctx->toUnity_key = JS_NewAtom(context, "toUnity");
+    ctx->push_atom = JS_NewAtom(context, "push");
+    ctx->slice_atom = JS_NewAtom(context, "slice");
+    ctx->fields_atom = JS_NewAtom(context, "_$fields");
     ctx->init_object = JS_NewObject(context);
     
     JSValue global = JS_GetGlobalObject(context);
@@ -1649,6 +1662,9 @@ void QJS_DeleteContext(QJS_Context *ctx) {
     JS_FreeAtom(ctx->context, ctx->prototype_key);
     JS_FreeAtom(ctx->context, ctx->toString_key);
     JS_FreeAtom(ctx->context, ctx->toUnity_key);
+    JS_FreeAtom(ctx->context, ctx->push_atom);
+    JS_FreeAtom(ctx->context, ctx->slice_atom);
+    JS_FreeAtom(ctx->context, ctx->fields_atom);
     JS_FreeValue(ctx->context, ctx->init_object);
     JS_FreeValue(ctx->context, ctx->create_operators);
     JS_FreeContext(ctx->context);
@@ -2319,6 +2335,10 @@ QJS_Value *QJS_RetainValue(QJS_Context *ctx, void *ptr, int *sharp_id, int *shar
 }
 
 void QJS_NewPromise(QJS_Context *ctx, int promise) {
+    if (ctx->promise_map.count(promise) > 0) {
+        QJS_Error(ctx->runtime, "Promise is exist");
+        return;
+    }
     JSContext *context = ctx->context;
     JSValue ctor = JS_GetPromiseConstructor(context);
     QJS_Promise *pro = new QJS_Promise();
@@ -2328,7 +2348,6 @@ void QJS_NewPromise(QJS_Context *ctx, int promise) {
     JSValue value = JS_CallConstructor(context, ctor, 1, &func);
     JS_FreeValue(context, func);
     if (JS_IsException(value)) {
-        pro->free(context);
         delete pro;
         JSValue ex = JS_GetException(context);
         QJS_PrintError(ctx, ex);

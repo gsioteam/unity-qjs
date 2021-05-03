@@ -20,11 +20,17 @@ namespace qjs
         private UnityEngine.Object _object;
 
         [SerializeField]
-        private List<AttrValue> array = new List<AttrValue>();
+        [SerializeReference]
+        private List<object> array = new List<object>() ;
 
         [SerializeField]
         private string typeRef;
         private Type objectType;
+
+        private AttrValue GetValue(int idx)
+        {
+            return array[idx] as AttrValue;
+        }
 
         public object Value
         {
@@ -42,7 +48,7 @@ namespace qjs
                             Array list = Activator.CreateInstance(listType, array.Count) as Array;
                             for (int i = 0, t = array.Count; i < t; ++i)
                             {
-                                list.SetValue(array[i].Value, i);
+                                list.SetValue(GetValue(i).Value, i);
                             }
                             return list;
                         }

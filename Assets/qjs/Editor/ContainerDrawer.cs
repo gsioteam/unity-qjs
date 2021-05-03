@@ -13,13 +13,13 @@ namespace qjs
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             EditorGUI.BeginProperty(position, label, property);
+            AttrValue attrValue = EditorHelper.GetTargetObjectOfProperty(property) as AttrValue;
 
-            FieldType type = (FieldType)property.FindPropertyRelative("type").enumValueIndex;
+            FieldType type = attrValue.type;
             switch (type)
             {
                 case FieldType.Object:
                     {
-                        AttrValue attrValue = EditorHelper.GetTargetObjectOfProperty(property) as AttrValue;
                         SerializedProperty objectPro = property.FindPropertyRelative("_object");
                         UnityEngine.Object newObj = EditorGUI.ObjectField(position, label, objectPro.objectReferenceValue, attrValue.ObjectType, true);
                         if (newObj != objectPro.objectReferenceValue)
@@ -31,7 +31,6 @@ namespace qjs
                     }
                 case FieldType.Array:
                     {
-                        AttrValue attrValue = EditorHelper.GetTargetObjectOfProperty(property) as AttrValue;
                         SerializedProperty arrayPro = property.FindPropertyRelative("array");
                         EditorGUI.LabelField(new Rect(
                             position.x, position.y, position.width, EditorGUIUtility.singleLineHeight), label);
@@ -103,7 +102,9 @@ namespace qjs
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            FieldType type = (FieldType)property.FindPropertyRelative("type").enumValueIndex;
+            AttrValue attrValue = EditorHelper.GetTargetObjectOfProperty(property) as AttrValue;
+
+            FieldType type = attrValue.type;
             switch (type)
             {
                 case FieldType.Object:

@@ -28,6 +28,8 @@ namespace qjs
         Vector3,
         Vector4,
         Object,
+        Array,
+        Unkown,
     }
 
     public struct Annotation
@@ -35,6 +37,7 @@ namespace qjs
         public string name;
         public FieldType type;
         public object defaultValue;
+        public Type objectType;
 
         public static Annotation From(JSValue value)
         {
@@ -46,6 +49,23 @@ namespace qjs
             {
                 var val = value.Get(2);
                 annotation.defaultValue = val.Value;
+            }
+            if (annotation.type == FieldType.Object || annotation.type == FieldType.Array)
+            {
+                while (true)
+                {
+                    if (len > 3)
+                    {
+                        var typeValue = value.Get(3);
+                        if (typeValue.Type == JSValueType.Class)
+                        {
+                            annotation.objectType = typeValue.Value as Type;
+                            break;
+                        }
+                    }
+                    annotation.objectType = typeof(UnityEngine.Object);
+                    break;
+                }
             }
             return annotation;
         }

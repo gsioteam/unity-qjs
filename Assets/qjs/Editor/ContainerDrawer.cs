@@ -7,6 +7,134 @@ using UnityEngine.UIElements;
 
 namespace qjs
 {
+    [CustomPropertyDrawer(typeof(AttrValue))]
+    public class AttrValueDrawer : PropertyDrawer
+    {
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            EditorGUI.BeginProperty(position, label, property);
+
+            FieldType type = (FieldType)property.FindPropertyRelative("type").enumValueIndex;
+            switch (type)
+            {
+                case FieldType.Object:
+                    {
+                        AttrValue attrValue = EditorHelper.GetTargetObjectOfProperty(property) as AttrValue;
+                        SerializedProperty objectPro = property.FindPropertyRelative("_object");
+                        UnityEngine.Object newObj = EditorGUI.ObjectField(position, label, objectPro.objectReferenceValue, attrValue.ObjectType, true);
+                        if (newObj != objectPro.objectReferenceValue)
+                        {
+                            objectPro.objectReferenceValue = newObj;
+                            property.serializedObject.ApplyModifiedProperties();
+                        }
+                        break;
+                    }
+                case FieldType.Array:
+                    {
+                        AttrValue attrValue = EditorHelper.GetTargetObjectOfProperty(property) as AttrValue;
+                        SerializedProperty arrayPro = property.FindPropertyRelative("array");
+                        EditorGUI.LabelField(new Rect(
+                            position.x, position.y, position.width, EditorGUIUtility.singleLineHeight), label);
+                        if (arrayPro.isExpanded)
+                        {
+                            if (GUI.Button(new Rect(
+                                position.x - 20, position.y, 20, 20),
+                                new GUIContent("▼")))
+                            {
+                                arrayPro.isExpanded = false;
+                            }
+                            float offsetY = position.y + EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+                            int length = arrayPro.arraySize;
+                            EditorGUI.indentLevel += 1;
+                            for (int i = 0; i < length; ++i)
+                            {
+                                var subPro = arrayPro.GetArrayElementAtIndex(i);
+                                float height = EditorGUI.GetPropertyHeight(subPro);
+                                EditorGUI.PropertyField(new Rect(
+                                    position.x,
+                                    offsetY, position.width - 20,
+                                    height), subPro, new GUIContent(i.ToString()));
+                                if (GUI.Button(new Rect(
+                                    position.x + position.width - 20,
+                                    offsetY, 20, EditorGUIUtility.singleLineHeight), "-"))
+                                {
+                                    attrValue.RemoveAt(i);
+                                    property.serializedObject.UpdateIfRequiredOrScript();
+                                    break;
+                                }
+
+                                offsetY += height + EditorGUIUtility.standardVerticalSpacing;
+                            }
+                            const float insetWidth = 46;
+                            if (GUI.Button(new Rect(
+                                position.x + insetWidth,
+                                offsetY, position.width - insetWidth,
+                                EditorGUIUtility.singleLineHeight), new GUIContent("+")))
+                            {
+                                attrValue.InsertNew();
+                                property.serializedObject.UpdateIfRequiredOrScript();
+                            }
+                            EditorGUI.indentLevel -= 1;
+                        } else
+                        {
+                            if (GUI.Button(new Rect(
+                                position.x - 20, position.y, 20, 20),
+                                new GUIContent("▶")))
+                            {
+                                arrayPro.isExpanded = true;
+                            }
+                        }
+                        break;
+                    }
+                case FieldType.Unkown:
+                    {
+                        EditorGUI.LabelField(position, label);
+                        break;
+                    }
+                default:
+                    {
+                        SerializedProperty valuePro = property.FindPropertyRelative("value");
+                        EditorGUI.PropertyField(position, valuePro, label, true);
+                        break;
+                    }
+            }
+            EditorGUI.EndProperty();
+        }
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            FieldType type = (FieldType)property.FindPropertyRelative("type").enumValueIndex;
+            switch (type)
+            {
+                case FieldType.Object:
+                    {
+                        SerializedProperty objectPro = property.FindPropertyRelative("_object");
+                        return EditorGUI.GetPropertyHeight(objectPro);
+                    }
+                case FieldType.Array:
+                    {
+                        SerializedProperty arrayPro = property.FindPropertyRelative("array");
+                        //float height = EditorGUIUtility.singleLineHeight;
+                        //for (int i = 0, t = arrayPro.arraySize; i < t; ++i)
+                        //{
+                        //    height += heightOfValue(arrayPro.GetArrayElementAtIndex(i));
+                        //}
+                        //return height;
+                        return EditorGUI.GetPropertyHeight(arrayPro);
+                    }
+                case FieldType.Unkown:
+                    {
+                        return EditorGUIUtility.singleLineHeight;
+                    }
+                default:
+                    {
+                        SerializedProperty valuePro = property.FindPropertyRelative("value");
+                        return EditorGUI.GetPropertyHeight(valuePro);
+                    }
+            }
+        }
+    }
+
     [CustomPropertyDrawer(typeof(Container))]
     public class ContainerDrawer : PropertyDrawer
     {
@@ -33,24 +161,32 @@ namespace qjs
             if (GUI.Button(new Rect(position.x + position.width - 20, position.y, 20, EditorGUIUtility.singleLineHeight), "r"))
             {
                 container.reload();
-                container.GetAttributes();
             }
 
+            container.GetAttributes();
             var attributesProperty = property.FindPropertyRelative("attributes");
-
+            List<Attribute> attributes = EditorHelper.GetTargetObjectOfProperty(attributesProperty) as List<Attribute>;
             float offset = EditorGUIUtility.singleLineHeight;
-            for (int i = 0, t = attributesProperty.arraySize; i < t; ++i)
+            for (int i = 0, t = attributes.Count; i < t; ++i)
             {
-                SerializedProperty attr = attributesProperty.GetArrayElementAtIndex(i);
-                float rowHeight = EditorGUI.GetPropertyHeight(attr.FindPropertyRelative("value"));
-                string key = attr.FindPropertyRelative("key").stringValue;
-                //Attribute a = EditorHelper.GetTargetObjectOfProperty(attr) as Attribute;
-                EditorGUI.PropertyField(
-                    new Rect(position.x, position.y + offset,
-                    position.width, rowHeight),
-                    attr.FindPropertyRelative("value"),
-                    new GUIContent(key), true);
-                offset += rowHeight;
+                try
+                {
+                    Attribute attribute = attributes[i];
+                    SerializedProperty attr = attributesProperty.GetArrayElementAtIndex(i);
+                    string key = attr.FindPropertyRelative("key").stringValue;
+                    SerializedProperty valuePro = attr.FindPropertyRelative("value");
+                    float rowHeight = EditorGUI.GetPropertyHeight(valuePro);
+                    EditorGUI.PropertyField(
+                        new Rect(position.x, position.y + offset,
+                                        position.width, rowHeight),
+                        valuePro, new GUIContent(key));
+                    
+                    offset += rowHeight;
+                } catch (System.Exception e)
+                {
+                    Debug.Log(e);
+                    Debug.Log("Error postition  " + i);
+                }
             }
 
             EditorGUI.EndProperty();

@@ -1292,7 +1292,7 @@ namespace qjs
                                                 {
                                                     if (attr.key == str)
                                                     {
-                                                        results[0].SetAny(quickJS, attr.value, instances.resultCache);
+                                                        results[0].SetAny(quickJS, attr.value.Value, instances.resultCache);
                                                         return;
                                                     }
                                                 }
@@ -1321,7 +1321,7 @@ namespace qjs
                                                     if (attr.key == str)
                                                     {
                                                         var val = Utils.ProcessObject(quickJS, ref argv[2]);
-                                                        attr.value = (val is JSValue) ? ((JSValue)val).Value : val;
+                                                        attr.value.Value = (val is JSValue) ? ((JSValue)val).Value : val;
                                                         break;
                                                     }
                                                 }

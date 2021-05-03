@@ -831,7 +831,7 @@ struct QJS_Class {
             }
             
             JSValue data = JS_NewArray(context);
-            len = min(argc, 3);
+            len = min(argc, 4);
             for (int i = 0; i < len; ++i) {
                 JS_Invoke(context, data, ctx->push_atom, 1, &argv[i]);
             }

@@ -311,20 +311,54 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   js:
-    target: {fileID: 529047499}
     script: {fileID: 4900000, guid: 8cd7046101e954f509364dfe3d0f0836, type: 3}
     attributes:
     - key: test4
       value:
-        id: 0
+        type: 13
+        value:
+          id: 0
+        _object: {fileID: 0}
+        array: []
+        typeRef: 
+    - key: test5
+      value:
+        type: 15
+        value:
+          id: 1
+        _object: {fileID: 218259762}
+        array: []
+        typeRef: UnityEngine.Camera, UnityEngine.CoreModule
+    - key: test6
+      value:
+        type: 16
+        value:
+          id: 1
+        _object: {fileID: 0}
+        array:
+        - type: 15
+          value:
+            id: 1
+          _object: {fileID: 0}
+          array: []
+          typeRef: UnityEngine.MonoBehaviour, UnityEngine.CoreModule
+        - type: 15
+          value:
+            id: 1
+          _object: {fileID: 0}
+          array: []
+          typeRef: UnityEngine.MonoBehaviour, UnityEngine.CoreModule
+        typeRef: UnityEngine.MonoBehaviour, UnityEngine.CoreModule
   references:
     version: 1
     00000000:
       type: {class: Vector3, ns: UnityEngine, asm: UnityEngine.CoreModule}
       data:
-        x: 1.87
+        x: 1
         y: 2
         z: 0
+    00000001:
+      type: {class: , ns: , asm: }
 --- !u!1 &1847117484
 GameObject:
   m_ObjectHideFlags: 0

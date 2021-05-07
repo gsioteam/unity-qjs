@@ -478,7 +478,7 @@ namespace qjs
         {
             get
             {
-                if (module.IsNull && script != null)
+                if ((module == null || module.IsNull) && script != null)
                 {
                     if (modules.ContainsKey(script))
                     {

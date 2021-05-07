@@ -44,6 +44,7 @@
 #define TYPE_STATIC_PGET    16
 #define TYPE_STATIC_PSET    17
 #define TYPE_CREATE_WORKER  18
+#define TYPE_PROMISE_TRANS  19
 
 using namespace std;
 namespace qjs {
@@ -1521,6 +1522,26 @@ void JS_Log(const char *format, ...) {
     }
 }
 
+JSValue QJS_PromiseTransformer(JSContext *context, JSValue value) {
+    JSValue res = JS_UNDEFINED;
+    QJS_Context *ctx = (QJS_Context *)JS_GetContextOpaque(context);
+    if (JS_HasProperty(context, value, ctx->private_key)) {
+        JSValue data = JS_GetProperty(context, value, ctx->private_key);
+        int64_t ptr;
+        if (JS_ToBigInt64(context, &ptr, data) == 0) {
+            QJS_Instance *ins = (QJS_Instance *)ptr;
+            ctx->arguments[0].setInstance(ins);
+            ctx->runtime->action(ctx,
+                                 ins->clazz->sharp_id,
+                                 ctx->ids.data(),
+                                 0, TYPE_PROMISE_TRANS, 1);
+            res = ctx->results[0].toValue(ctx);
+        }
+        JS_FreeValue(context, data);
+    }
+    return res;
+}
+
 void *QJS_Setup(QJS_Handlers handlers, QJS_Item *arguments, QJS_Item *results) {
     QJS_Runtime *rt = new QJS_Runtime;
     rt->runtime = JS_NewRuntime();
@@ -1529,6 +1550,7 @@ void *QJS_Setup(QJS_Handlers handlers, QJS_Item *arguments, QJS_Item *results) {
     JS_SetRuntimeOpaque(rt->runtime, rt);
 //    js_std_init_handlers(rt->runtime);
     JS_SetModuleLoaderFunc(rt->runtime, module_name, module_loader, rt);
+    JS_SetPromiseTransform(QJS_PromiseTransformer);
     
     rt->handlers = handlers;
     _temp_runtime = rt;
@@ -2348,6 +2370,7 @@ void QJS_NewPromise(QJS_Context *ctx, int promise) {
     JSValue value = JS_CallConstructor(context, ctor, 1, &func);
     JS_FreeValue(context, func);
     if (JS_IsException(value)) {
+        pro->free(context);
         delete pro;
         JSValue ex = JS_GetException(context);
         QJS_PrintError(ctx, ex);

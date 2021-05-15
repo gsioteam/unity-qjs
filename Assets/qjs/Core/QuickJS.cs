@@ -600,7 +600,7 @@ namespace qjs
                     else
                     {
                         if (!oType.IsGenericType)
-                            Debug.LogWarning(string.Format("{0} is registered dynamically, which would be incomplete after public.", oType));
+                            Debug.LogWarning(string.Format("{0} is registered dynamically, which would be incomplete after publish.", oType));
                         clazz = QuickJS.RegisterClass(instances, ctx, oType);
                         type = ITEM_TYPE_OBJECT;
                         val.p = QuickJS.createObject(instances, ctx, clazz, obj);

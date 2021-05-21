@@ -1,0 +1,15 @@
+{
+  "name": "math_wrap",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@jsantell/event-target": "^1.1.3",
+    "gl-matrix": "^3.3.0"
+  }
+}

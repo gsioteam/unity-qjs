@@ -116,9 +116,14 @@ namespace qjs
             for (int i = 0, t = clazz.methods.Length; i < t; ++i)
             {
                 var method = clazz.methods[i];
+                var tar = method;
+                if (tar is CachedMethodInfo)
+                {
+                    method = (tar as CachedMethodInfo).method;
+                }
                 if (method == methodInfo)
                 {
-                    FixedMethodInfo<T> fixedMethod = new FixedMethodInfo<T>(methodInfo, invoke);
+                    FixedMethodInfo<T> fixedMethod = new FixedMethodInfo<T>(tar, invoke);
                     clazz.methods[i] = fixedMethod;
                     break;
                 }
@@ -128,7 +133,7 @@ namespace qjs
 
     class CachedMethodInfo : MethodBase
     {
-        private MethodBase method;
+        public MethodBase method;
         public CachedMethodInfo(MethodBase methodInfo)
         {
             method = methodInfo;

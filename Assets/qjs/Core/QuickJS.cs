@@ -1134,16 +1134,16 @@ namespace qjs
                                         var ps = Utils.ProcessArguments(quickJS, argv, 1, argc);
 
                                         var method = Utils.FindMethod(quickJS, clazz.methods, ids, length, ps);
-                                        //if (method != null)
-                                        //{
-                                        //    object ret = method.Invoke(tar, ps);
-                                        //    results[0].SetAny(quickJS, ret, instances.resultCache);
-                                        //}
-                                        //else
-                                        //{
-                                        //    Debug.LogError("Can not found match method. ");
-                                        results[0].SetNull();
-                                        //}
+                                        if (method != null)
+                                        {
+                                            object ret = method.Invoke(tar, ps);
+                                            results[0].SetAny(quickJS, ret, instances.resultCache);
+                                        }
+                                        else
+                                        {
+                                            Debug.LogError("Can not found match method. ");
+                                            results[0].SetNull();
+                                        }
                                         return;
                                     }
                                     Debug.LogError("Instance can not be empty.");

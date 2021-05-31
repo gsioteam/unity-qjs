@@ -40,7 +40,8 @@ public class HelloWorld : MonoBehaviour
         // Register types
         var clazz = quickJS.RegisterClass<A>();
 
-        clazz.RegisterMethod<A>(typeof(A).GetMethod("test2"), (A target, object[] argv) => {
+        clazz.RegisterMethod<A>(typeof(A).GetMethod("test2"), (A target, object[] argv) =>
+        {
             target.test2();
             return null;
         });

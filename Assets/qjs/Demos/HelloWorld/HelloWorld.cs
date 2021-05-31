@@ -38,11 +38,17 @@ public class HelloWorld : MonoBehaviour
     {
         qjs.QuickJS quickJS = new qjs.QuickJS();
         // Register types
-        quickJS.RegisterClass<A>();
+        var clazz = quickJS.RegisterClass<A>();
+
+        clazz.RegisterMethod<A>(typeof(A).GetMethod("test2"), (A target, object[] argv) => {
+            target.test2();
+            return null;
+        });
+
         quickJS.RegisterClass<Vector3>();
 
         // Get c# types in JS, via full class name.
-        quickJS.Eval("const A = unity('A'); const Vector3 = unity('UnityEngine.Vector3');");
+        quickJS.Eval("const A = unity('A'); const Vector3 = unity('UnityEngine.Vector3'); class B {test() {}}");
         DateTime dateTime;
 
         dateTime = DateTime.Now;

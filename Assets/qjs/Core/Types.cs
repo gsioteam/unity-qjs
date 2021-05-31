@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Threading;
@@ -88,9 +89,9 @@ namespace qjs
         public IntPtr ptr;
         public int id;
 
-        public ConstructorInfo[] constructors;
+        public MethodBase[] constructors;
         public FieldInfo[] fields;
-        public MethodInfo[] methods;
+        public MethodBase[] methods;
         public PropertyInfo[] properties;
 
         public Class(Type type)
@@ -99,6 +100,141 @@ namespace qjs
         }
     }
 
+    public delegate object InvokeHandler<T>(T target, object[] argv);
+
+    public struct ClassInfo
+    {
+        private Class clazz;
+
+        internal ClassInfo(Class clazz)
+        {
+            this.clazz = clazz;
+        }
+
+        public void RegisterMethod<T>(MethodInfo methodInfo, InvokeHandler<T> invoke)
+        {
+            for (int i = 0, t = clazz.methods.Length; i < t; ++i)
+            {
+                var method = clazz.methods[i];
+                if (method == methodInfo)
+                {
+                    FixedMethodInfo<T> fixedMethod = new FixedMethodInfo<T>(methodInfo, invoke);
+                    clazz.methods[i] = fixedMethod;
+                    break;
+                }
+            }
+        }
+    }
+
+    class CachedMethodInfo : MethodBase
+    {
+        private MethodBase method;
+        public CachedMethodInfo(MethodBase methodInfo)
+        {
+            method = methodInfo;
+        }
+
+        public override MethodAttributes Attributes => method.Attributes;
+
+        public override RuntimeMethodHandle MethodHandle => method.MethodHandle;
+
+        public override Type DeclaringType => method.DeclaringType;
+
+        public override MemberTypes MemberType => method.MemberType;
+
+        public override string Name => method.Name;
+
+        public override Type ReflectedType => method.ReflectedType;
+
+        public override object[] GetCustomAttributes(bool inherit)
+        {
+            return method.GetCustomAttributes(inherit);
+        }
+
+        public override object[] GetCustomAttributes(Type attributeType, bool inherit)
+        {
+            return method.GetCustomAttributes(attributeType, inherit);
+        }
+
+        public override MethodImplAttributes GetMethodImplementationFlags()
+        {
+            return method.GetMethodImplementationFlags();
+        }
+
+        private ParameterInfo[] parameters;
+        public override ParameterInfo[] GetParameters()
+        {
+            if (parameters == null)
+            {
+                parameters = method.GetParameters();
+            }
+            return parameters;
+        }
+
+        public override object Invoke(object obj, BindingFlags invokeAttr, Binder binder, object[] parameters, CultureInfo culture)
+        {
+            return method.Invoke(obj, invokeAttr, binder, parameters, culture);
+        }
+
+        public override bool IsDefined(Type attributeType, bool inherit)
+        {
+            return method.IsDefined(attributeType, inherit);
+        }
+    }
+
+    class FixedMethodInfo<T> : MethodBase
+    {
+        private MethodBase method;
+        private InvokeHandler<T> invoke;
+
+        public FixedMethodInfo(MethodBase methodInfo, InvokeHandler<T> invoke)
+        {
+            this.method = methodInfo;
+            this.invoke = invoke;
+        }
+
+        public override MethodAttributes Attributes => method.Attributes;
+
+        public override RuntimeMethodHandle MethodHandle => method.MethodHandle;
+
+        public override Type DeclaringType => method.DeclaringType;
+
+        public override MemberTypes MemberType => method.MemberType;
+
+        public override string Name => method.Name;
+
+        public override Type ReflectedType => method.ReflectedType;
+
+        public override object[] GetCustomAttributes(bool inherit)
+        {
+            return method.GetCustomAttributes(inherit);
+        }
+
+        public override object[] GetCustomAttributes(Type attributeType, bool inherit)
+        {
+            return method.GetCustomAttributes(attributeType, inherit);
+        }
+
+        public override MethodImplAttributes GetMethodImplementationFlags()
+        {
+            return method.GetMethodImplementationFlags();
+        }
+
+        public override ParameterInfo[] GetParameters()
+        {
+            return method.GetParameters();
+        }
+
+        public override object Invoke(object obj, BindingFlags invokeAttr, Binder binder, object[] parameters, CultureInfo culture)
+        {
+            return invoke((T)obj, parameters);
+        }
+
+        public override bool IsDefined(Type attributeType, bool inherit)
+        {
+            return method.IsDefined(attributeType, inherit);
+        }
+    }
 
     abstract class FunctionMaker
     {

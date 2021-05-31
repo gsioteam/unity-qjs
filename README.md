@@ -63,18 +63,6 @@ ps: This thread demo is not real multi-thread, because js engine will lock the t
 
 Just use `Worker` for multi-thread, like in browser.
 
-- Base math type.
-
-I have write some pure js type for math caculate, use the js type would be faster.
-
-|JS Type    |C# Type    |
-|  ----     | ----      |
-| vec2      | Vector2   |
-| vec3      | Vector3   |
-| vec4      | Vector4   |
-| mat4      | Matrix4x4 |
-| quat      | Quaternion|
-
 - Customer type convert
 
 Your can implment a `toUnity` function for support convert to C# object. 

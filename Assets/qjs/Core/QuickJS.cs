@@ -821,7 +821,7 @@ namespace qjs
         const int SETTER_MASK = (1 << 2);
         const int STATIC_MASK = (1 << 3);
 
-        public void RegisterClass(Type type)
+        public ClassInfo RegisterClass(Type type)
         {
             lock (instances)
             {
@@ -829,7 +829,7 @@ namespace qjs
                 {
                     supportTypes.Add(type);
                 }
-                RegisterClass(instances, ctx, type);
+                return new ClassInfo(RegisterClass(instances, ctx, type));
             }
         }
 
@@ -858,7 +858,7 @@ namespace qjs
                     }
                 } else
                 {
-                    var constructors = new List<ConstructorInfo>();
+                    var constructors = new List<MethodBase>();
                     foreach (var constructor in type.GetConstructors())
                     {
                         if (constructor.IsPublic)
@@ -866,7 +866,7 @@ namespace qjs
                             //Debug.Log(" --- [C] " + constructor.GetParameters().Length);
                             var range = argumentsRange(constructor);
                             Api.QJS_AddConstructor(clazz.ptr, constructors.Count, range.start, range.end);
-                            constructors.Add(constructor);
+                            constructors.Add(new CachedMethodInfo(constructor));
                         }
                     }
                     clazz.constructors = constructors.ToArray();
@@ -883,7 +883,7 @@ namespace qjs
                     }
                     clazz.fields = fields.ToArray();
 
-                    var methods = new List<MethodInfo>();
+                    var methods = new List<MethodBase>();
                     foreach (var method in type.GetMethods())
                     {
                         if (method.IsPublic)
@@ -892,7 +892,7 @@ namespace qjs
                             //Debug.Log(" --- [M] " + method.Name + " static " + method.IsStatic);
                             var range = argumentsRange(method);
                             Api.QJS_AddFunction(clazz.ptr, method.Name, methods.Count, method.IsStatic, range.start, range.end);
-                            methods.Add(method);
+                            methods.Add(new CachedMethodInfo(method));
                         }
                     }
                     clazz.methods = methods.ToArray();
@@ -930,9 +930,9 @@ namespace qjs
             return clazz;
         }
 
-        public void RegisterClass<T>()
+        public ClassInfo RegisterClass<T>()
         {
-            RegisterClass(typeof(T));
+            return RegisterClass(typeof(T));
         }
 
 
@@ -1134,15 +1134,16 @@ namespace qjs
                                         var ps = Utils.ProcessArguments(quickJS, argv, 1, argc);
 
                                         var method = Utils.FindMethod(quickJS, clazz.methods, ids, length, ps);
-                                        if (method != null)
-                                        {
-                                            object ret = method.Invoke(tar, ps);
-                                            results[0].SetAny(quickJS, ret, instances.resultCache);
-                                        } else
-                                        {
-                                            Debug.LogError("Can not found match method. ");
-                                            results[0].SetNull();
-                                        }
+                                        //if (method != null)
+                                        //{
+                                        //    object ret = method.Invoke(tar, ps);
+                                        //    results[0].SetAny(quickJS, ret, instances.resultCache);
+                                        //}
+                                        //else
+                                        //{
+                                        //    Debug.LogError("Can not found match method. ");
+                                        results[0].SetNull();
+                                        //}
                                         return;
                                     }
                                     Debug.LogError("Instance can not be empty.");

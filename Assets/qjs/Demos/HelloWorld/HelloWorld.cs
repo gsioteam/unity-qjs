@@ -18,6 +18,9 @@ class A
     public void test2()
     {
     }
+    public void test3()
+    {
+    }
 
     public static void sayHelloWorld()
     {
@@ -40,6 +43,7 @@ public class HelloWorld : MonoBehaviour
         // Register types
         var clazz = quickJS.RegisterClass<A>();
 
+        // Register a static method
         clazz.RegisterMethod<A>(typeof(A).GetMethod("test2"), (A target, object[] argv) =>
         {
             target.test2();
@@ -69,7 +73,15 @@ public class HelloWorld : MonoBehaviour
             // Call c# method from JS.
             quickJS.Eval("a = new A(); for (var i = 0; i < 10000; ++i) { a.test2(); } ");
         }
-        Debug.Log("Call c#: " + (DateTime.Now - dateTime));
+        Debug.Log("Call static c# method: " + (DateTime.Now - dateTime));
+
+
+        dateTime = DateTime.Now;
+        {
+            // Call c# method from JS.
+            quickJS.Eval("a = new A(); for (var i = 0; i < 10000; ++i) { a.test3(); } ");
+        }
+        Debug.Log("Call dynamic c# method: " + (DateTime.Now - dateTime));
 
         dateTime = DateTime.Now;
         {

@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using com.spacepuppyeditor;
 using UnityEditor;
 using UnityEngine;
@@ -20,12 +21,20 @@ namespace qjs
             {
                 case FieldType.Object:
                     {
-                        SerializedProperty objectPro = property.FindPropertyRelative("_object");
-                        UnityEngine.Object newObj = EditorGUI.ObjectField(position, label, objectPro.objectReferenceValue, attrValue.ObjectType, true);
-                        if (newObj != objectPro.objectReferenceValue)
+                        System.Type ObjectType = attrValue.ObjectType;
+                        if (typeof(UnityEngine.Object).IsAssignableFrom(ObjectType))
                         {
-                            objectPro.objectReferenceValue = newObj;
-                            property.serializedObject.ApplyModifiedProperties();
+                            SerializedProperty objectPro = property.FindPropertyRelative("_object");
+                            UnityEngine.Object newObj = EditorGUI.ObjectField(position, label, objectPro.objectReferenceValue, attrValue.ObjectType, true);
+                            if (newObj != objectPro.objectReferenceValue)
+                            {
+                                objectPro.objectReferenceValue = newObj;
+                                property.serializedObject.ApplyModifiedProperties();
+                            }
+                        } else
+                        {
+                            SerializedProperty valuePro = property.FindPropertyRelative("value");
+                            EditorGUI.PropertyField(position, valuePro, label, true);
                         }
                         break;
                     }
@@ -109,8 +118,16 @@ namespace qjs
             {
                 case FieldType.Object:
                     {
-                        SerializedProperty objectPro = property.FindPropertyRelative("_object");
-                        return EditorGUI.GetPropertyHeight(objectPro);
+                        System.Type ObjectType = attrValue.ObjectType;
+                        if (typeof(UnityEngine.Object).IsAssignableFrom(ObjectType))
+                        {
+                            SerializedProperty objectPro = property.FindPropertyRelative("_object");
+                            return EditorGUI.GetPropertyHeight(objectPro);
+                        } else
+                        {
+                            SerializedProperty valuePro = property.FindPropertyRelative("value");
+                            return EditorGUI.GetPropertyHeight(valuePro);
+                        }
                     }
                 case FieldType.Array:
                     {
@@ -165,29 +182,63 @@ namespace qjs
             }
 
             container.GetAttributes();
+            property.serializedObject.UpdateIfRequiredOrScript();
             var attributesProperty = property.FindPropertyRelative("attributes");
             List<Attribute> attributes = EditorHelper.GetTargetObjectOfProperty(attributesProperty) as List<Attribute>;
             float offset = EditorGUIUtility.singleLineHeight;
-            for (int i = 0, t = attributes.Count; i < t; ++i)
+            if (attributesProperty.arraySize == attributes.Count)
             {
-                try
+                for (int i = 0, t = attributesProperty.arraySize; i < t; ++i)
                 {
-                    Attribute attribute = attributes[i];
-                    SerializedProperty attr = attributesProperty.GetArrayElementAtIndex(i);
-                    string key = attr.FindPropertyRelative("key").stringValue;
-                    SerializedProperty valuePro = attr.FindPropertyRelative("value");
-                    float rowHeight = EditorGUI.GetPropertyHeight(valuePro);
-                    EditorGUI.PropertyField(
-                        new Rect(position.x, position.y + offset,
-                                        position.width, rowHeight),
-                        valuePro, new GUIContent(key));
-                    
-                    offset += rowHeight;
-                } catch (System.Exception e)
-                {
-                    Debug.Log(e);
-                    Debug.Log("Error postition  " + i);
+                    try
+                    {
+                        Attribute attribute = attributes[i];
+                        SerializedProperty attr = attributesProperty.GetArrayElementAtIndex(i);
+                        string key = attr.FindPropertyRelative("key").stringValue;
+                        string lower = key.ToLower();
+                        StringBuilder sb = new StringBuilder();
+                        bool lastIsLower = false;
+                        for (int n = 0; n < key.Length; ++n)
+                        {
+                            char ch = key[n];
+                            if (n == 0)
+                            {
+                                sb.Append(char.ToUpper(ch));
+                            } else
+                            {
+                                char lch = lower[n];
+                                if (ch == lch)
+                                {
+                                    sb.Append(ch);
+                                    lastIsLower = true;
+                                } else
+                                {
+                                    if (lastIsLower)
+                                    {
+                                        sb.Append(' ');
+                                    }
+                                    sb.Append(ch);
+                                }
+                            }
+                        }
+                        SerializedProperty valuePro = attr.FindPropertyRelative("value");
+                        float rowHeight = EditorGUI.GetPropertyHeight(valuePro);
+                        EditorGUI.PropertyField(
+                            new Rect(position.x, position.y + offset,
+                                            position.width, rowHeight),
+                            valuePro, new GUIContent(sb.ToString()));
+
+                        offset += rowHeight;
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.Log(e);
+                        Debug.Log("Error postition  " + i);
+                    }
                 }
+            } else
+            {
+                Debug.Log("Diff");
             }
 
             EditorGUI.EndProperty();

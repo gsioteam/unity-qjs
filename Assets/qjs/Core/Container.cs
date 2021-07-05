@@ -40,7 +40,13 @@ namespace qjs
                 {
                     case FieldType.Object:
                         {
-                            return _object;
+                            if (typeof(UnityEngine.Object).IsAssignableFrom(objectType))
+                            {
+                                return _object;
+                            } else
+                            {
+                                return value;
+                            }
                         }
                     case FieldType.Array:
                         {
@@ -63,10 +69,15 @@ namespace qjs
                 {
                     case FieldType.Object:
                         {
-                            if (value is UnityEngine.Object)
+                            if (typeof(UnityEngine.Object).IsAssignableFrom(objectType))
                             {
                                 _object = value as UnityEngine.Object;
                                 this.value = null;
+                                array.Clear();
+                            } else
+                            {
+                                this.value = value;
+                                _object = null;
                                 array.Clear();
                             }
                             break;
@@ -195,6 +206,10 @@ namespace qjs
         public void Initialize(FieldType type, Type objectType, object obj)
         {
             this.type = type;
+            if (objectType == null && obj != null)
+            {
+                objectType = obj.GetType();
+            }
             this.ObjectType = objectType;
             switch (type)
             {
@@ -289,9 +304,22 @@ namespace qjs
                         value = Vector4.zero;
                     break;
                 case FieldType.Object:
-                    if (typeof(UnityEngine.Object).IsAssignableFrom(GetType(obj)))
+                    if (typeof(UnityEngine.Object).IsAssignableFrom(objectType))
                     {
                         _object = obj as UnityEngine.Object;
+                    } else 
+                    {
+                        if (obj == null && objectType.IsSerializable)
+                        {
+                            try
+                            {
+                                obj = Activator.CreateInstance(objectType);
+                            } finally
+                            {
+
+                            }
+                        }
+                        value = obj;
                     }
                     break;
                 case FieldType.Array:

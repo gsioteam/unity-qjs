@@ -599,7 +599,7 @@ namespace qjs
                     }
                     else
                     {
-                        if (!oType.IsGenericType)
+                        if (!oType.IsGenericType && !typeof(IEnumerator).IsAssignableFrom(oType))
                             Debug.LogWarning(string.Format("{0} is registered dynamically, which would be incomplete after publish.", oType));
                         clazz = QuickJS.RegisterClass(instances, ctx, oType);
                         type = ITEM_TYPE_OBJECT;
